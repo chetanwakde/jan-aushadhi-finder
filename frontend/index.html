@@ -1,0 +1,1588 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#006B3C">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="JanAushadhi">
+  <meta name="description" content="Find nearest Jan Aushadhi stores and save up to 90% on medicines with generic equivalents.">
+  <meta name="keywords" content="jan aushadhi, generic medicine, cheap medicine, india pharmacy, PMBJP">
+  <meta property="og:title" content="Jan Aushadhi Finder">
+  <meta property="og:description" content="Find generic medicines and save up to 90%">
+  <meta property="og:type" content="website">
+  <title>Jan Aushadhi Finder — Generic Medicine Locator</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
+  <link rel="apple-touch-icon" href="/icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root {
+  --green-primary: #006B3C;
+  --green-dark: #004D2C;
+  --green-light: #00A65A;
+  --green-pale: #E8F5EE;
+  --saffron: #FF6B00;
+  --saffron-light: #FFF0E6;
+  --blue-accent: #0066CC;
+  --red-alert: #D32F2F;
+  --bg: #F5F7FA;
+  --surface: #FFFFFF;
+  --surface-2: #F0F4F8;
+  --border: #E2E8F0;
+  --text-primary: #0D1B2A;
+  --text-secondary: #4A5568;
+  --text-muted: #718096;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.1);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.14);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --radius-xs: 6px;
+  --nav-height: 68px;
+  --header-height: 60px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{height:100%;scroll-behavior:smooth}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text-primary);height:100%;overflow:hidden;user-select:none}
+#app{display:flex;flex-direction:column;height:100dvh;max-width:480px;margin:0 auto;background:var(--bg);position:relative;overflow:hidden}
+.app-header{background:var(--green-primary);padding:12px 20px;padding-top:calc(12px + env(safe-area-inset-top,0px));display:flex;align-items:center;justify-content:space-between;height:calc(var(--header-height) + env(safe-area-inset-top,0px));flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,0.2);z-index:100}
+.header-brand{display:flex;align-items:center;gap:10px}
+.header-logo{width:38px;height:38px;background:rgba(255,255,255,0.15);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px}
+.header-title{display:flex;flex-direction:column}
+.header-title h1{font-size:16px;font-weight:800;color:#fff;line-height:1.1;letter-spacing:-0.3px}
+.header-title span{font-size:10px;color:rgba(255,255,255,0.75);font-weight:500}
+.header-actions{display:flex;gap:8px}
+.header-btn{width:36px;height:36px;background:rgba(255,255,255,0.15);border:none;border-radius:10px;color:#fff;font-size:18px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:background 0.15s}
+.header-btn:active{background:rgba(255,255,255,0.25)}
+.lang-btn{font-size:11px;font-weight:700;letter-spacing:0.5px;min-width:36px;padding:0 6px}
+.pages-container{flex:1;overflow:hidden;position:relative}
+.page{position:absolute;inset:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;opacity:0;pointer-events:none;transition:opacity 0.2s ease;padding-bottom:calc(var(--nav-height) + var(--safe-bottom) + 16px)}
+.page.active{opacity:1;pointer-events:all}
+.bottom-nav{background:var(--surface);border-top:1px solid var(--border);display:flex;height:calc(var(--nav-height) + var(--safe-bottom));padding-bottom:var(--safe-bottom);flex-shrink:0;z-index:100;box-shadow:0 -2px 12px rgba(0,0,0,0.08)}
+.nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;border:none;background:transparent;color:var(--text-muted);transition:color 0.15s;padding:8px 4px;position:relative}
+.nav-item.active{color:var(--green-primary)}
+.nav-item .nav-icon{font-size:22px;transition:transform 0.2s}
+.nav-item.active .nav-icon{transform:scale(1.1)}
+.nav-item span:last-child{font-size:10px;font-weight:600;letter-spacing:0.3px}
+.nav-indicator{position:absolute;top:6px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:var(--green-primary);opacity:0;transition:opacity 0.2s}
+.nav-item.active .nav-indicator{opacity:1}
+
+/* ─── HOME ─── */
+.home-hero{background:linear-gradient(160deg,var(--green-primary) 0%,var(--green-dark) 100%);padding:24px 20px 32px;position:relative;overflow:hidden}
+.home-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,0.05)}
+.home-hero::after{content:'';position:absolute;bottom:-30px;left:-20px;width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,0.04)}
+.hero-greeting{font-size:13px;color:rgba(255,255,255,0.7);font-weight:500;margin-bottom:4px}
+.hero-title{font-size:22px;font-weight:800;color:#fff;line-height:1.2;margin-bottom:6px;letter-spacing:-0.5px}
+.hero-subtitle{font-size:13px;color:rgba(255,255,255,0.75);font-weight:500}
+.hero-stats{display:flex;gap:12px;margin-top:20px}
+.hero-stat{background:rgba(255,255,255,0.12);border-radius:var(--radius-sm);padding:10px 14px;flex:1;text-align:center}
+.hero-stat-value{font-size:20px;font-weight:800;color:#fff;display:block}
+.hero-stat-label{font-size:10px;color:rgba(255,255,255,0.7);font-weight:500;margin-top:2px;display:block}
+.search-bar-container{padding:16px 16px 0;margin-top:-12px;position:relative;z-index:10}
+.search-bar{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow-lg);display:flex;align-items:center;gap:12px;padding:14px 16px;border:1.5px solid transparent;transition:border-color 0.15s}
+.search-bar:focus-within{border-color:var(--green-primary)}
+.search-icon{font-size:20px;flex-shrink:0;color:var(--text-muted)}
+.search-bar input{flex:1;border:none;outline:none;font-size:15px;font-family:inherit;color:var(--text-primary);background:transparent}
+.search-bar input::placeholder{color:var(--text-muted)}
+.search-clear{width:28px;height:28px;border-radius:50%;background:var(--surface-2);border:none;color:var(--text-muted);font-size:14px;display:none;align-items:center;justify-content:center;cursor:pointer}
+.search-clear.show{display:flex}
+.search-suggestions{background:var(--surface);border-radius:0 0 var(--radius) var(--radius);box-shadow:var(--shadow-lg);margin:0 16px;overflow:hidden;border:1px solid var(--border);border-top:none;max-height:280px;overflow-y:auto}
+.search-suggestion{display:flex;align-items:center;gap:12px;padding:12px 16px;cursor:pointer;transition:background 0.15s;border-bottom:1px solid var(--border)}
+.search-suggestion:last-child{border-bottom:none}
+.search-suggestion:active{background:var(--surface-2)}
+.suggestion-icon{font-size:20px;width:36px;height:36px;background:var(--green-pale);border-radius:var(--radius-xs);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.suggestion-text{font-size:14px;font-weight:600;color:var(--text-primary)}
+.suggestion-generic{font-size:12px;color:var(--text-muted);margin-top:1px}
+.suggestion-savings{font-size:11px;font-weight:700;color:var(--green-primary);background:var(--green-pale);padding:2px 6px;border-radius:20px;flex-shrink:0}
+.home-content{padding:16px}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.section-title{font-size:16px;font-weight:800;color:var(--text-primary)}
+.section-link{font-size:13px;font-weight:600;color:var(--green-primary)}
+.quick-categories{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:20px}
+.category-chip{background:var(--surface);border-radius:var(--radius-sm);padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:all 0.15s;border:1.5px solid var(--border);box-shadow:var(--shadow-sm)}
+.category-chip:active{transform:scale(0.97);background:var(--green-pale);border-color:var(--green-primary)}
+.category-chip-icon{font-size:22px}
+.category-chip-text{font-size:13px;font-weight:600;color:var(--text-primary)}
+.top-savers{display:flex;flex-direction:column;gap:10px;margin-bottom:20px}
+.saver-card{background:var(--surface);border-radius:var(--radius-sm);padding:14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all 0.15s;box-shadow:var(--shadow-sm);border:1px solid var(--border)}
+.saver-card:active{transform:scale(0.98)}
+.saver-badge{background:var(--saffron);color:#fff;font-size:12px;font-weight:800;padding:4px 8px;border-radius:20px;flex-shrink:0;white-space:nowrap}
+.saver-info{flex:1;min-width:0}
+.saver-brand{font-size:14px;font-weight:700;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.saver-generic{font-size:12px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.saver-price{text-align:right;flex-shrink:0}
+.saver-price-branded{font-size:12px;color:var(--text-muted);text-decoration:line-through}
+.saver-price-generic{font-size:14px;font-weight:800;color:var(--green-primary)}
+
+/* ─── INFO BANNER ─── */
+.info-banner{background:linear-gradient(135deg,var(--saffron-light),#fff);border:1px solid #FFD6B0;border-radius:var(--radius-sm);padding:14px;margin-bottom:16px;display:flex;gap:12px;align-items:flex-start}
+.info-banner-icon{font-size:24px;flex-shrink:0}
+.info-banner-text{font-size:13px;color:var(--text-secondary);line-height:1.5}
+.info-banner-title{font-size:14px;font-weight:700;color:var(--saffron);margin-bottom:4px}
+
+/* ─── MEDICINE RESULTS ─── */
+.results-page{padding:16px}
+.results-header{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.results-count{font-size:14px;color:var(--text-secondary);font-weight:500}
+.medicine-card{background:var(--surface);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow-sm);border:1px solid var(--border);cursor:pointer;transition:all 0.15s;position:relative;overflow:hidden}
+.medicine-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--green-primary);border-radius:4px 0 0 4px}
+.medicine-card:active{transform:scale(0.98);box-shadow:var(--shadow-md)}
+.medicine-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;margin-left:8px}
+.medicine-brand{font-size:16px;font-weight:800;color:var(--text-primary)}
+.savings-badge{background:linear-gradient(135deg,#00A65A,var(--green-primary));color:#fff;font-size:12px;font-weight:800;padding:4px 10px;border-radius:20px;white-space:nowrap;flex-shrink:0}
+.medicine-generic{font-size:13px;color:var(--text-secondary);margin-bottom:4px;margin-left:8px}
+.medicine-salt{font-size:11px;color:var(--text-muted);margin-bottom:10px;margin-left:8px}
+.medicine-card-bottom{display:flex;align-items:center;justify-content:space-between;margin-left:8px}
+.price-group{display:flex;align-items:center;gap:8px}
+.price-branded{font-size:13px;color:var(--text-muted);text-decoration:line-through}
+.price-generic{font-size:18px;font-weight:800;color:var(--green-primary)}
+.price-label{font-size:10px;color:var(--text-muted);font-weight:500}
+.category-tag{background:var(--green-pale);color:var(--green-primary);font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px}
+
+/* ─── MEDICINE DETAIL MODAL ─── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 0.25s;backdrop-filter:blur(4px)}
+.modal-overlay.show{opacity:1;pointer-events:all}
+.modal-sheet{background:var(--surface);border-radius:var(--radius) var(--radius) 0 0;width:100%;max-width:480px;padding:0 0 calc(24px + var(--safe-bottom));max-height:92vh;overflow-y:auto;transform:translateY(100%);transition:transform 0.3s cubic-bezier(0.34,1.56,0.64,1)}
+.modal-overlay.show .modal-sheet{transform:translateY(0)}
+.modal-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 0}
+.modal-header{padding:16px 20px;border-bottom:1px solid var(--border)}
+.modal-close{position:absolute;right:16px;top:16px;width:32px;height:32px;border-radius:50%;background:var(--surface-2);border:none;font-size:18px;color:var(--text-muted);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.modal-body{padding:20px}
+.modal-medicine-name{font-size:22px;font-weight:800;color:var(--text-primary);margin-bottom:4px}
+.modal-generic-name{font-size:15px;color:var(--green-primary);font-weight:600;margin-bottom:4px}
+.modal-salt{font-size:13px;color:var(--text-muted);margin-bottom:16px}
+.price-comparison{background:var(--green-pale);border-radius:var(--radius-sm);padding:16px;margin-bottom:16px;display:flex;justify-content:space-around;align-items:center}
+.price-col{text-align:center}
+.price-col-label{font-size:11px;font-weight:600;color:var(--text-muted);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.5px}
+.price-col-value{font-size:24px;font-weight:800}
+.price-col.branded .price-col-value{color:var(--red-alert)}
+.price-col.generic .price-col-value{color:var(--green-primary)}
+.price-divider{width:1px;height:40px;background:var(--border)}
+.savings-highlight{text-align:center;margin-top:8px;font-size:14px;font-weight:700;color:var(--green-primary)}
+.detail-row{display:flex;gap:8px;margin-bottom:8px;align-items:flex-start}
+.detail-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+.detail-label{font-size:12px;color:var(--text-muted);font-weight:500;min-width:70px;flex-shrink:0}
+.detail-value{font-size:13px;color:var(--text-primary);font-weight:500;flex:1}
+.modal-actions{display:flex;flex-direction:column;gap:10px;padding:0 20px;margin-top:8px}
+.btn-primary{background:var(--green-primary);color:#fff;border:none;border-radius:var(--radius-sm);padding:14px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary:active{background:var(--green-dark);transform:scale(0.98)}
+.btn-secondary{background:var(--surface-2);color:var(--text-primary);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:13px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-secondary:active{background:var(--border)}
+.btn-outline{background:transparent;color:var(--green-primary);border:1.5px solid var(--green-primary);border-radius:var(--radius-sm);padding:13px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:8px;transition:all 0.15s}
+.btn-outline:active{background:var(--green-pale)}
+
+/* ─── STORES ─── */
+.stores-page{padding:16px}
+.map-container{height:240px;border-radius:var(--radius);overflow:hidden;margin-bottom:16px;border:1px solid var(--border);position:relative}
+#store-map{height:100%;width:100%}
+.map-placeholder{height:100%;background:var(--surface-2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer}
+.map-placeholder-icon{font-size:40px}
+.map-placeholder-text{font-size:14px;font-weight:600;color:var(--text-secondary)}
+.map-placeholder-sub{font-size:12px;color:var(--text-muted)}
+.locate-btn{width:40px;height:40px;background:var(--surface);border-radius:var(--radius-xs);border:none;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:var(--shadow-md)}
+.store-filters{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px;margin-bottom:16px;-ms-overflow-style:none;scrollbar-width:none}
+.store-filters::-webkit-scrollbar{display:none}
+.filter-chip{background:var(--surface);border:1.5px solid var(--border);border-radius:20px;padding:6px 14px;font-size:13px;font-weight:600;color:var(--text-secondary);cursor:pointer;white-space:nowrap;transition:all 0.15s;flex-shrink:0}
+.filter-chip.active{background:var(--green-primary);border-color:var(--green-primary);color:#fff}
+.store-card{background:var(--surface);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow-sm);border:1px solid var(--border);cursor:pointer;transition:all 0.15s}
+.store-card:active{transform:scale(0.98)}
+.store-card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px}
+.store-name{font-size:15px;font-weight:700;color:var(--text-primary);line-height:1.3;flex:1;padding-right:8px}
+.store-status{font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;flex-shrink:0}
+.store-status.open{background:#E8F5EE;color:var(--green-primary)}
+.store-status.closed{background:#FEE;color:var(--red-alert)}
+.store-address{font-size:12px;color:var(--text-muted);margin-bottom:10px;line-height:1.4}
+.store-meta{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.store-meta-item{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text-secondary);font-weight:500}
+.store-distance{font-size:13px;font-weight:700;color:var(--blue-accent)}
+.store-rating{color:var(--saffron)}
+.store-actions{display:flex;gap:8px;margin-top:12px}
+.store-action-btn{flex:1;background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-xs);padding:8px;font-size:12px;font-weight:600;color:var(--text-primary);cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:6px;transition:all 0.15s}
+.store-action-btn:active{background:var(--border)}
+.store-action-btn.call{background:var(--green-pale);color:var(--green-primary);border-color:var(--green-primary)}
+.store-action-btn.dir{background:var(--saffron-light);color:var(--saffron);border-color:var(--saffron)}
+
+/* ─── REMINDERS ─── */
+.reminders-page{padding:16px}
+.reminders-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.add-reminder-btn{background:var(--green-primary);color:#fff;border:none;border-radius:var(--radius-sm);padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;transition:all 0.15s}
+.add-reminder-btn:active{background:var(--green-dark)}
+.empty-state{text-align:center;padding:48px 20px;color:var(--text-muted)}
+.empty-icon{font-size:56px;margin-bottom:16px;display:block}
+.empty-title{font-size:18px;font-weight:700;color:var(--text-primary);margin-bottom:8px}
+.empty-subtitle{font-size:14px;line-height:1.6}
+.reminder-card{background:var(--surface);border-radius:var(--radius);padding:16px;margin-bottom:12px;box-shadow:var(--shadow-sm);border:1px solid var(--border);position:relative;overflow:hidden}
+.reminder-card-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px}
+.reminder-med-name{font-size:15px;font-weight:700;color:var(--text-primary)}
+.reminder-delete{background:none;border:none;font-size:12px;color:var(--red-alert);font-weight:600;cursor:pointer;padding:4px 8px;border-radius:var(--radius-xs);transition:background 0.15s}
+.reminder-delete:active{background:#FEE}
+.reminder-generic{font-size:12px;color:var(--text-muted);margin-bottom:8px}
+.reminder-meta{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.reminder-meta-item{font-size:12px;color:var(--text-secondary);background:var(--surface-2);padding:4px 8px;border-radius:var(--radius-xs);font-weight:500}
+.refill-badge{display:inline-block;font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px}
+.refill-badge.ok{background:var(--green-pale);color:var(--green-primary)}
+.refill-badge.soon{background:var(--saffron-light);color:var(--saffron)}
+.refill-badge.overdue{background:#FEE;color:var(--red-alert)}
+
+/* ─── SAVINGS ─── */
+.savings-page{padding:16px}
+.savings-search-bar{background:var(--surface);border-radius:var(--radius-sm);border:1.5px solid var(--border);display:flex;align-items:center;gap:8px;padding:12px 14px;margin-bottom:4px;transition:border-color 0.15s}
+.savings-search-bar:focus-within{border-color:var(--green-primary)}
+.savings-search-bar input{flex:1;border:none;outline:none;font-size:14px;font-family:inherit;color:var(--text-primary);background:transparent}
+.prescription-items{margin-bottom:16px}
+.prescription-item{background:var(--surface);border-radius:var(--radius-sm);padding:12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;border:1px solid var(--border)}
+.prescription-item-info{flex:1;min-width:0}
+.prescription-item-name{font-size:14px;font-weight:700;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prescription-item-generic{font-size:12px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qty-control{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.qty-btn{width:28px;height:28px;border-radius:var(--radius-xs);background:var(--surface-2);border:1px solid var(--border);font-size:18px;color:var(--text-primary);cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;transition:all 0.15s}
+.qty-btn:active{background:var(--border)}
+.qty-value{font-size:14px;font-weight:700;color:var(--text-primary);min-width:24px;text-align:center}
+.remove-item-btn{background:none;border:none;font-size:18px;cursor:pointer;color:var(--text-muted);padding:4px;line-height:1;transition:color 0.15s;flex-shrink:0}
+.remove-item-btn:active{color:var(--red-alert)}
+.savings-result-card{background:linear-gradient(135deg,var(--green-primary),var(--green-dark));border-radius:var(--radius);padding:20px;margin-bottom:16px;position:relative;overflow:hidden}
+.savings-result-card::before{content:'💊';font-size:80px;position:absolute;right:-10px;bottom:-16px;opacity:0.1}
+.savings-amount{font-size:36px;font-weight:800;color:#fff;margin-bottom:4px}
+.savings-label{font-size:13px;color:rgba(255,255,255,0.8);margin-bottom:16px}
+.savings-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.savings-grid-item{background:rgba(255,255,255,0.12);border-radius:var(--radius-xs);padding:12px}
+.savings-grid-label{font-size:11px;color:rgba(255,255,255,0.7);font-weight:500;margin-bottom:2px}
+.savings-grid-value{font-size:18px;font-weight:800;color:#fff}
+
+/* ─── AUTH PAGE ─── */
+.auth-page{padding:24px 20px;display:flex;flex-direction:column;align-items:center;min-height:100%}
+.auth-logo{font-size:56px;margin-bottom:16px}
+.auth-title{font-size:24px;font-weight:800;color:var(--text-primary);margin-bottom:6px}
+.auth-subtitle{font-size:14px;color:var(--text-muted);margin-bottom:32px;text-align:center}
+.auth-form{width:100%;max-width:340px}
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:13px;font-weight:600;color:var(--text-secondary);margin-bottom:6px}
+.form-input{width:100%;padding:13px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:15px;font-family:inherit;color:var(--text-primary);background:var(--surface);outline:none;transition:border-color 0.15s}
+.form-input:focus{border-color:var(--green-primary)}
+.auth-tabs{display:flex;background:var(--surface-2);border-radius:var(--radius-sm);padding:4px;margin-bottom:24px;width:100%;max-width:340px}
+.auth-tab{flex:1;padding:8px;border:none;background:transparent;font-size:13px;font-weight:600;color:var(--text-muted);border-radius:var(--radius-xs);cursor:pointer;font-family:inherit;transition:all 0.2s}
+.auth-tab.active{background:var(--surface);color:var(--text-primary);box-shadow:var(--shadow-sm)}
+.auth-divider{display:flex;align-items:center;gap:12px;margin:20px 0;width:100%;max-width:340px}
+.auth-divider-line{flex:1;height:1px;background:var(--border)}
+.auth-divider-text{font-size:12px;color:var(--text-muted);font-weight:500}
+.btn-google{width:100%;max-width:340px;background:var(--surface);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:13px;font-size:14px;font-weight:600;color:var(--text-primary);cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center;gap:10px;transition:all 0.15s}
+.btn-google:active{background:var(--surface-2)}
+.google-icon{font-size:20px}
+.otp-input-group{display:flex;gap:8px;justify-content:center;margin-bottom:16px}
+.otp-digit{width:44px;height:52px;border:1.5px solid var(--border);border-radius:var(--radius-xs);font-size:22px;font-weight:700;text-align:center;font-family:inherit;color:var(--text-primary);outline:none;transition:border-color 0.15s}
+.otp-digit:focus{border-color:var(--green-primary)}
+
+/* ─── PROFILE ─── */
+.profile-page{padding:0}
+.profile-header{background:linear-gradient(160deg,var(--green-primary),var(--green-dark));padding:32px 20px;padding-top:calc(32px + env(safe-area-inset-top,0px));text-align:center}
+.profile-avatar{width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,0.2);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 12px;border:3px solid rgba(255,255,255,0.4)}
+.profile-name{font-size:20px;font-weight:800;color:#fff;margin-bottom:4px}
+.profile-email{font-size:13px;color:rgba(255,255,255,0.75)}
+.profile-stats{display:flex;gap:1px;background:var(--border);border-radius:var(--radius-sm);margin:20px 16px 0;overflow:hidden}
+.profile-stat{flex:1;background:var(--surface);padding:14px 8px;text-align:center}
+.profile-stat-value{font-size:20px;font-weight:800;color:var(--green-primary)}
+.profile-stat-label{font-size:10px;color:var(--text-muted);font-weight:500}
+.profile-section{padding:16px}
+.profile-section-title{font-size:12px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.profile-menu{background:var(--surface);border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border)}
+.profile-menu-item{display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer;border-bottom:1px solid var(--border);transition:background 0.15s}
+.profile-menu-item:last-child{border-bottom:none}
+.profile-menu-item:active{background:var(--surface-2)}
+.profile-menu-icon{font-size:20px;width:32px;text-align:center}
+.profile-menu-text{flex:1;font-size:14px;font-weight:500;color:var(--text-primary)}
+.profile-menu-arrow{font-size:12px;color:var(--text-muted)}
+.profile-menu-item.danger .profile-menu-text{color:var(--red-alert)}
+
+/* ─── FORM MODAL ─── */
+.form-modal-body{padding:20px}
+.form-select{width:100%;padding:13px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;color:var(--text-primary);background:var(--surface);outline:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23718096' stroke-width='2' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center}
+.form-select:focus{border-color:var(--green-primary)}
+.form-textarea{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:14px;font-family:inherit;color:var(--text-primary);background:var(--surface);outline:none;resize:none;height:80px;transition:border-color 0.15s}
+.form-textarea:focus{border-color:var(--green-primary)}
+
+/* ─── TOAST ─── */
+#toast-container{position:fixed;bottom:calc(var(--nav-height) + var(--safe-bottom) + 16px);left:50%;transform:translateX(-50%);z-index:9999;display:flex;flex-direction:column-reverse;gap:8px;pointer-events:none;width:calc(100% - 32px);max-width:420px}
+.toast{background:var(--text-primary);color:#fff;border-radius:var(--radius-sm);padding:12px 16px;font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;box-shadow:var(--shadow-lg);opacity:0;transform:translateY(16px);transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1);pointer-events:all}
+.toast.show{opacity:1;transform:translateY(0)}
+.toast.success{background:#1a7a42}
+.toast.error{background:var(--red-alert)}
+.toast.warning{background:#b45309}
+.toast.info{background:var(--blue-accent)}
+
+/* ─── LOADER ─── */
+.loading-spinner{display:flex;justify-content:center;align-items:center;padding:32px}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--green-primary);border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.skeleton{background:linear-gradient(90deg,var(--surface-2) 25%,var(--border) 50%,var(--surface-2) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:var(--radius-xs)}
+@keyframes shimmer{to{background-position:-200% 0}}
+
+/* ─── HINDI MODE ─── */
+.lang-hi .hindi{display:block!important}
+.lang-hi .english{display:none!important}
+.hindi{display:none}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="header-brand">
+      <div class="header-logo">💊</div>
+      <div class="header-title">
+        <h1 class="english">Jan Aushadhi Finder</h1>
+        <h1 class="hindi" style="font-family:'Noto Sans Devanagari',sans-serif">जन औषधि खोजक</h1>
+        <span class="english">Save up to 90% on medicines</span>
+        <span class="hindi" style="font-family:'Noto Sans Devanagari',sans-serif">90% तक बचाएं</span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="header-btn lang-btn" onclick="toggleLang()" title="भाषा बदलें / Change Language">हिं</button>
+      <button class="header-btn" onclick="showInfoModal()" title="About Jan Aushadhi">ℹ️</button>
+    </div>
+  </header>
+
+  <!-- PAGES -->
+  <div class="pages-container">
+
+    <!-- HOME PAGE -->
+    <div class="page active" id="page-home">
+      <div class="home-hero">
+        <div class="hero-greeting english">🇮🇳 PM Jan Aushadhi Program</div>
+        <div class="hero-greeting hindi" style="display:none;font-family:'Noto Sans Devanagari',sans-serif">🇮🇳 प्रधानमंत्री जन औषधि योजना</div>
+        <div class="hero-title english">Find Generic<br>Medicines Near You</div>
+        <div class="hero-title hindi" style="display:none;font-family:'Noto Sans Devanagari',sans-serif">जेनेरिक दवाई<br>अपने पास खोजें</div>
+        <div class="hero-subtitle english">Quality medicines at 50–90% lower prices</div>
+        <div class="hero-subtitle hindi" style="display:none;font-family:'Noto Sans Devanagari',sans-serif">50–90% कम कीमत पर गुणवत्तापूर्ण दवाएं</div>
+        <div class="hero-stats">
+          <div class="hero-stat"><span class="hero-stat-value" id="stat-medicines">150+</span><span class="hero-stat-label english">Medicines</span><span class="hero-stat-label hindi" style="display:none;font-family:'Noto Sans Devanagari',sans-serif">दवाएं</span></div>
+          <div class="hero-stat"><span class="hero-stat-value" id="stat-stores">12</span><span class="hero-stat-label english">Stores</span><span class="hero-stat-label hindi" style="display:none;font-family:'Noto Sans Devanagari',sans-serif">दुकानें</span></div>
+          <div class="hero-stat"><span class="hero-stat-value">90%</span><span class="hero-stat-label english">Max Savings</span><span class="hero-stat-label hindi" style="display:none;font-family:'Noto Sans Devanagari',sans-serif">अधिकतम बचत</span></div>
+        </div>
+      </div>
+
+      <div class="search-bar-container">
+        <div class="search-bar">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="main-search-input" placeholder="Search brand or generic name..." autocomplete="off" autocorrect="off" spellcheck="false" oninput="handleSearch(this.value)" />
+          <button class="search-clear" id="search-clear-btn" onclick="clearSearch()">✕</button>
+        </div>
+      </div>
+      <div id="home-suggestions" class="search-suggestions" style="display:none"></div>
+
+      <div class="home-content" id="home-main">
+        <div class="info-banner">
+          <div class="info-banner-icon">💡</div>
+          <div>
+            <div class="info-banner-title english">What is Jan Aushadhi?</div>
+            <div class="info-banner-title hindi" style="display:none;font-family:'Noto Sans Devanagari',sans-serif">जन औषधि क्या है?</div>
+            <div class="info-banner-text english">Government scheme providing quality generic medicines at 50–90% less than branded prices. Same formula, same quality, different name.</div>
+            <div class="info-banner-text hindi" style="display:none;font-family:'Noto Sans Devanagari',sans-serif">सरकारी योजना जो ब्रांडेड दवाओं से 50–90% कम कीमत पर गुणवत्तापूर्ण जेनेरिक दवाएं प्रदान करती है।</div>
+          </div>
+        </div>
+
+        <div class="section-header">
+          <span class="section-title english">Browse Categories</span>
+          <span class="section-title hindi" style="display:none;font-family:'Noto Sans Devanagari',sans-serif">श्रेणियां</span>
+        </div>
+        <div class="quick-categories">
+          <div class="category-chip" onclick="searchCategory('Analgesic/Antipyretic')"><span class="category-chip-icon">🤒</span><span class="category-chip-text english">Fever & Pain</span><span class="category-chip-text hindi" style="display:none;font-family:'Noto Sans Devanagari',sans-serif">बुखार & दर्द</span></div>
+          <div class="category-chip" onclick="searchCategory('Antidiabetic')"><span class="category-chip-icon">🩺</span><span class="category-chip-text english">Diabetes</span><span class="category-chip-text hindi" style="display:none;font-family:'Noto Sans Devanagari',sans-serif">मधुमेह</span></div>
+          <div class="category-chip" onclick="searchCategory('Antihypertensive')"><span class="category-chip-icon">❤️</span><span class="category-chip-text english">Blood Pressure</span><span class="category-chip-text hindi" style="display:none;font-family:'Noto Sans Devanagari',sans-serif">रक्तचाप</span></div>
+          <div class="category-chip" onclick="searchCategory('Antibiotic')"><span class="category-chip-icon">💊</span><span class="category-chip-text english">Antibiotics</span><span class="category-chip-text hindi" style="display:none;font-family:'Noto Sans Devanagari',sans-serif">एंटीबायोटिक</span></div>
+          <div class="category-chip" onclick="searchCategory('Statin')"><span class="category-chip-icon">🫀</span><span class="category-chip-text english">Cholesterol</span><span class="category-chip-text hindi" style="display:none;font-family:'Noto Sans Devanagari',sans-serif">कोलेस्ट्रॉल</span></div>
+          <div class="category-chip" onclick="searchCategory('Thyroid Hormone')"><span class="category-chip-icon">🦋</span><span class="category-chip-text english">Thyroid</span><span class="category-chip-text hindi" style="display:none;font-family:'Noto Sans Devanagari',sans-serif">थायरॉइड</span></div>
+          <div class="category-chip" onclick="searchCategory('Vitamin')"><span class="category-chip-icon">💪</span><span class="category-chip-text english">Vitamins</span><span class="category-chip-text hindi" style="display:none;font-family:'Noto Sans Devanagari',sans-serif">विटामिन</span></div>
+          <div class="category-chip" onclick="searchCategory('Antifungal')"><span class="category-chip-icon">🧪</span><span class="category-chip-text english">Skin & Fungal</span><span class="category-chip-text hindi" style="display:none;font-family:'Noto Sans Devanagari',sans-serif">त्वचा</span></div>
+        </div>
+
+        <div class="section-header">
+          <span class="section-title english">Top Savers</span>
+          <span class="section-title hindi" style="display:none;font-family:'Noto Sans Devanagari',sans-serif">सर्वोत्तम बचत</span>
+          <span class="section-link" onclick="navigateTo('savings')">Calculator →</span>
+        </div>
+        <div class="top-savers" id="top-savers-list">
+          <div class="loading-spinner"><div class="spinner"></div></div>
+        </div>
+      </div>
+
+      <!-- SEARCH RESULTS (hidden when not searching) -->
+      <div class="results-page" id="home-results" style="display:none">
+        <div class="results-header">
+          <span class="results-count" id="results-count-text">Searching...</span>
+        </div>
+        <div id="medicines-list"></div>
+      </div>
+    </div>
+
+    <!-- STORES PAGE -->
+    <div class="page" id="page-stores">
+      <div class="stores-page">
+        <div class="map-container">
+          <div id="map-placeholder" class="map-placeholder" onclick="initMap()">
+            <div class="map-placeholder-icon">📍</div>
+            <div class="map-placeholder-text english">Tap to find stores near you</div>
+            <div class="map-placeholder-text hindi" style="display:none;font-family:'Noto Sans Devanagari',sans-serif">नजदीकी दुकान खोजें</div>
+            <div class="map-placeholder-sub">Uses your GPS location</div>
+          </div>
+          <div id="store-map" style="display:none"></div>
+        </div>
+
+        <div class="savings-search-bar" style="margin-bottom:12px;">
+          <span>🔍</span>
+          <input type="text" id="store-search-input" placeholder="Search stores by name or location..." autocomplete="off" oninput="filterStoresByText(this.value)">
+        </div>
+
+        <div class="store-filters">
+          <div class="filter-chip active" onclick="filterStores('all',this)">All Stores</div>
+          <div class="filter-chip" onclick="filterStores('open',this)">Open Now</div>
+          <div class="filter-chip" onclick="filterStores('nearby',this)">Nearby (&lt;5km)</div>
+          <div class="filter-chip" onclick="filterStores('top',this)">Top Rated</div>
+        </div>
+
+        <div id="stores-list">
+          <div class="loading-spinner"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- REMINDERS PAGE -->
+    <div class="page" id="page-reminders">
+      <div class="reminders-page">
+        <div class="reminders-header">
+          <div>
+            <div class="section-title english">Medicine Reminders</div>
+            <div class="section-title hindi" style="display:none;font-family:'Noto Sans Devanagari',sans-serif">दवाई रिमाइंडर</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px" class="english">Track refill dates</div>
+          </div>
+          <button class="add-reminder-btn" onclick="showAddReminderModal()">+ Add</button>
+        </div>
+        <div id="reminders-container">
+          <div class="loading-spinner"><div class="spinner"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SAVINGS PAGE -->
+    <div class="page" id="page-savings">
+      <div class="savings-page">
+        <div class="section-header" style="margin-bottom:8px">
+          <span class="section-title english">Savings Calculator</span>
+          <span class="section-title hindi" style="display:none;font-family:'Noto Sans Devanagari',sans-serif">बचत कैलकुलेटर</span>
+        </div>
+        <p style="font-size:13px;color:var(--text-muted);margin-bottom:16px" class="english">See how much you save switching to generic medicines</p>
+
+        <div class="savings-search-bar">
+          <span>🔍</span>
+          <input type="text" id="calc-search-input" placeholder="Add medicine to prescription..." autocomplete="off" oninput="showCalcSuggestions(this.value)">
+        </div>
+        <div id="calc-suggestions" class="search-suggestions" style="display:none;margin-bottom:12px"></div>
+
+        <div id="prescription-items"></div>
+
+        <div class="savings-result-card" id="savings-result-card" style="display:none">
+          <div style="font-size:13px;color:rgba(255,255,255,0.8);margin-bottom:4px" class="english">Total Savings</div>
+          <div class="savings-amount" id="result-saved">₹0</div>
+          <div class="savings-label" id="result-percent"></div>
+          <div class="savings-grid">
+            <div class="savings-grid-item">
+              <div class="savings-grid-label english">Branded Cost</div>
+              <div class="savings-grid-value" id="result-branded">₹0</div>
+            </div>
+            <div class="savings-grid-item">
+              <div class="savings-grid-label english">Generic Cost</div>
+              <div class="savings-grid-value" id="result-generic">₹0</div>
+            </div>
+          </div>
+        </div>
+
+        <div id="savings-empty" style="text-align:center;padding:40px 0">
+          <span style="font-size:48px;display:block;margin-bottom:12px">💰</span>
+          <div style="font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:6px" class="english">Build Your Prescription</div>
+          <div style="font-size:13px;color:var(--text-muted)" class="english">Search for medicines above to see your savings</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PROFILE PAGE -->
+    <div class="page" id="page-profile">
+      <div class="profile-page">
+        <div id="profile-auth-section"></div>
+      </div>
+    </div>
+
+  </div><!-- /pages-container -->
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" onclick="navigateTo('home')">
+      <div class="nav-indicator"></div>
+      <span class="nav-icon">🏠</span>
+      <span class="english">Home</span>
+      <span class="hindi" style="display:none;font-family:'Noto Sans Devanagari',sans-serif">होम</span>
+    </button>
+    <button class="nav-item" onclick="navigateTo('stores')">
+      <div class="nav-indicator"></div>
+      <span class="nav-icon">📍</span>
+      <span class="english">Stores</span>
+      <span class="hindi" style="display:none;font-family:'Noto Sans Devanagari',sans-serif">दुकानें</span>
+    </button>
+    <button class="nav-item" onclick="navigateTo('reminders')">
+      <div class="nav-indicator"></div>
+      <span class="nav-icon">⏰</span>
+      <span class="english">Reminders</span>
+      <span class="hindi" style="display:none;font-family:'Noto Sans Devanagari',sans-serif">रिमाइंडर</span>
+    </button>
+    <button class="nav-item" onclick="navigateTo('savings')">
+      <div class="nav-indicator"></div>
+      <span class="nav-icon">💰</span>
+      <span class="english">Savings</span>
+      <span class="hindi" style="display:none;font-family:'Noto Sans Devanagari',sans-serif">बचत</span>
+    </button>
+    <button class="nav-item" onclick="navigateTo('profile')">
+      <div class="nav-indicator"></div>
+      <span class="nav-icon">👤</span>
+      <span class="english">Profile</span>
+      <span class="hindi" style="display:none;font-family:'Noto Sans Devanagari',sans-serif">प्रोफ़ाइल</span>
+    </button>
+  </nav>
+</div>
+
+<!-- MEDICINE DETAIL MODAL -->
+<div class="modal-overlay" id="medicine-modal" onclick="handleModalClick(event,'medicine-modal')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div style="position:relative">
+      <button class="modal-close" onclick="closeModal('medicine-modal')">✕</button>
+    </div>
+    <div class="modal-body" id="medicine-modal-body"></div>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="findStoresForMedicine()">📍 Find Nearby Stores</button>
+      <div style="display:flex;gap:10px">
+        <button class="btn-secondary" style="flex:1" onclick="addReminderFromModal()">⏰ Set Reminder</button>
+        <button class="btn-outline" style="flex:1" onclick="addToCalculator()">💰 Add to Calc</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- REMINDER FORM MODAL -->
+<div class="modal-overlay" id="reminder-modal" onclick="handleModalClick(event,'reminder-modal')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div style="font-size:18px;font-weight:800;margin-top:8px" class="english">Set Medicine Reminder</div>
+      <div style="font-size:18px;font-weight:800;margin-top:8px;display:none;font-family:'Noto Sans Devanagari',sans-serif" class="hindi">रिमाइंडर सेट करें</div>
+    </div>
+    <div class="form-modal-body">
+      <div class="form-group">
+        <label class="form-label english">Medicine Name *</label>
+        <input type="text" id="form-brand" class="form-input" placeholder="e.g. Dolo 650">
+      </div>
+      <div class="form-group">
+        <label class="form-label english">Generic Name</label>
+        <input type="text" id="form-generic" class="form-input" placeholder="e.g. Paracetamol 650mg">
+      </div>
+      <div class="form-group">
+        <label class="form-label english">Dosage *</label>
+        <input type="text" id="form-dosage" class="form-input" placeholder="e.g. 1 tablet twice daily">
+      </div>
+      <div class="form-group">
+        <label class="form-label english">Frequency *</label>
+        <select id="form-frequency" class="form-select">
+          <option>Once daily</option>
+          <option>Twice daily</option>
+          <option>Thrice daily</option>
+          <option>Weekly</option>
+          <option>Monthly</option>
+          <option>As needed</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label english">Next Refill Date *</label>
+        <input type="date" id="form-refill-date" class="form-input">
+      </div>
+      <div class="form-group">
+        <label class="form-label english">Notes (optional)</label>
+        <textarea id="form-notes" class="form-textarea" placeholder="e.g. Take after meals"></textarea>
+      </div>
+      <button class="btn-primary" onclick="saveReminder()" style="width:100%">Save Reminder</button>
+      <button class="btn-secondary" onclick="closeModal('reminder-modal')" style="width:100%;margin-top:10px">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- AUTH MODAL -->
+<div class="modal-overlay" id="auth-modal" onclick="handleModalClick(event,'auth-modal')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="form-modal-body">
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:40px;margin-bottom:8px">💊</div>
+        <div style="font-size:20px;font-weight:800;margin-bottom:4px">Jan Aushadhi Finder</div>
+        <div style="font-size:13px;color:var(--text-muted)">Sign in to save reminders across devices</div>
+      </div>
+
+      <div class="auth-tabs" style="margin-bottom:20px;max-width:100%">
+        <button class="auth-tab active" id="tab-email" onclick="switchAuthTab('email')">Email</button>
+        <button class="auth-tab" id="tab-phone" onclick="switchAuthTab('phone')">Phone / OTP</button>
+      </div>
+
+      <!-- Email Auth -->
+      <div id="auth-email-form">
+        <div class="auth-tabs" style="max-width:100%;margin-bottom:16px">
+          <button class="auth-tab active" id="tab-login" onclick="switchLoginMode('login')">Login</button>
+          <button class="auth-tab" id="tab-register" onclick="switchLoginMode('register')">Register</button>
+        </div>
+        <div class="form-group" id="name-group" style="display:none">
+          <label class="form-label">Full Name</label>
+          <input type="text" id="auth-name" class="form-input" placeholder="Your name">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input type="email" id="auth-email" class="form-input" placeholder="email@example.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <input type="password" id="auth-password" class="form-input" placeholder="Min 6 characters">
+        </div>
+        <button class="btn-primary" onclick="handleEmailAuth()" style="width:100%;margin-bottom:12px" id="email-auth-btn">Sign In</button>
+      </div>
+
+      <!-- OTP Auth -->
+      <div id="auth-phone-form" style="display:none">
+        <div id="otp-step-1">
+          <div class="form-group">
+            <label class="form-label">Mobile Number</label>
+            <div style="display:flex;gap:8px">
+              <div class="form-input" style="width:56px;flex-shrink:0;padding:13px 8px;text-align:center;font-weight:600">+91</div>
+              <input type="tel" id="auth-phone" class="form-input" placeholder="10-digit number" maxlength="10" style="flex:1">
+            </div>
+          </div>
+          <button class="btn-primary" onclick="sendOTP()" style="width:100%">Send OTP</button>
+        </div>
+        <div id="otp-step-2" style="display:none">
+          <div style="text-align:center;margin-bottom:16px">
+            <div style="font-size:14px;color:var(--text-secondary);margin-bottom:12px">Enter the 6-digit OTP sent to <strong id="otp-phone-display"></strong></div>
+            <div class="otp-input-group">
+              <input class="otp-digit" maxlength="1" oninput="otpInput(this,0)">
+              <input class="otp-digit" maxlength="1" oninput="otpInput(this,1)">
+              <input class="otp-digit" maxlength="1" oninput="otpInput(this,2)">
+              <input class="otp-digit" maxlength="1" oninput="otpInput(this,3)">
+              <input class="otp-digit" maxlength="1" oninput="otpInput(this,4)">
+              <input class="otp-digit" maxlength="1" oninput="otpInput(this,5)">
+            </div>
+          </div>
+          <button class="btn-primary" onclick="verifyOTP()" style="width:100%;margin-bottom:10px">Verify OTP</button>
+          <button class="btn-secondary" onclick="document.getElementById('otp-step-1').style.display='';document.getElementById('otp-step-2').style.display='none'" style="width:100%">← Change Number</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- INFO MODAL -->
+<div class="modal-overlay" id="info-modal" onclick="handleModalClick(event,'info-modal')">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-body">
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:48px;margin-bottom:8px">🏥</div>
+        <div style="font-size:20px;font-weight:800;margin-bottom:6px">About Jan Aushadhi</div>
+      </div>
+      <div style="font-size:14px;color:var(--text-secondary);line-height:1.7;margin-bottom:16px">
+        <b>Pradhan Mantri Bhartiya Janaushadhi Pariyojana (PMBJP)</b> is a Government of India initiative to provide quality generic medicines at affordable prices through dedicated Jan Aushadhi Kendras.
+      </div>
+      <div style="background:var(--green-pale);border-radius:var(--radius-sm);padding:14px;margin-bottom:12px">
+        <div style="font-weight:700;color:var(--green-primary);margin-bottom:8px">Key Facts</div>
+        <div style="font-size:13px;color:var(--text-secondary);line-height:1.8">
+          ✅ Generic medicines are bioequivalent to branded<br>
+          ✅ Manufactured by WHO-GMP certified plants<br>
+          ✅ Saves patients ₹7,500+ crore annually<br>
+          ✅ 10,500+ Jan Aushadhi Kendras across India<br>
+          ✅ 2,000+ medicines available under PMBJP
+        </div>
+      </div>
+      <div style="background:var(--saffron-light);border-radius:var(--radius-sm);padding:14px;border:1px solid #FFD6B0">
+        <div style="font-size:13px;color:#92400e;line-height:1.6">⚠️ <b>Disclaimer:</b> This app is for informational purposes. Always consult your doctor before switching medicines. Prices shown are indicative.</div>
+      </div>
+    </div>
+    <div style="padding:0 20px">
+      <button class="btn-primary" onclick="closeModal('info-modal')" style="width:100%">Got it</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toast-container"></div>
+
+<script>
+// ─── CONFIG ───────────────────────────────────────────────────────────────────
+const API_BASE = '/api';
+let currentPage = 'home';
+let currentMedicine = null;
+let remindersList = [];
+let prescriptionItems = [];
+let allStores = null;
+let storeFilterMode = 'all';
+let userLocation = null;
+let mapInstance = null;
+let searchDebounce = null;
+let currentLang = localStorage.getItem('lang') || 'en';
+let authToken = localStorage.getItem('authToken');
+let currentUser = authToken ? JSON.parse(localStorage.getItem('userData') || 'null') : null;
+let authMode = 'email', loginMode = 'login';
+
+// Apply saved language
+if (currentLang === 'hi') applyLang('hi');
+
+// ─── NAVIGATION ───────────────────────────────────────────────────────────────
+function navigateTo(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById(`page-${page}`).classList.add('active');
+  document.querySelectorAll('.nav-item')[['home','stores','reminders','savings','profile'].indexOf(page)].classList.add('active');
+  currentPage = page;
+  if (page === 'stores' && allStores === null) loadStores();
+  if (page === 'reminders') loadReminders();
+  if (page === 'profile') renderProfile();
+  window.scrollTo(0, 0);
+}
+
+// ─── LANGUAGE ─────────────────────────────────────────────────────────────────
+function toggleLang() {
+  currentLang = currentLang === 'en' ? 'hi' : 'en';
+  localStorage.setItem('lang', currentLang);
+  applyLang(currentLang);
+}
+
+function applyLang(lang) {
+  if (lang === 'hi') {
+    document.documentElement.setAttribute('lang', 'hi');
+    document.querySelectorAll('.english').forEach(el => el.style.display = 'none');
+    document.querySelectorAll('.hindi').forEach(el => el.style.display = '');
+    document.querySelector('.lang-btn').textContent = 'EN';
+    document.getElementById('main-search-input').placeholder = 'दवाई का नाम खोजें...';
+  } else {
+    document.documentElement.setAttribute('lang', 'en');
+    document.querySelectorAll('.english').forEach(el => el.style.display = '');
+    document.querySelectorAll('.hindi').forEach(el => el.style.display = 'none');
+    document.querySelector('.lang-btn').textContent = 'हिं';
+    document.getElementById('main-search-input').placeholder = 'Search brand or generic name...';
+  }
+}
+
+// ─── SEARCH ───────────────────────────────────────────────────────────────────
+function handleSearch(val) {
+  const clearBtn = document.getElementById('search-clear-btn');
+  clearBtn.classList.toggle('show', val.length > 0);
+  clearTimeout(searchDebounce);
+  if (val.trim().length < 2) {
+    hideSuggestions();
+    showHomeMain();
+    return;
+  }
+  searchDebounce = setTimeout(() => doSearch(val), 280);
+}
+
+async function doSearch(query) {
+  const suggestionsEl = document.getElementById('home-suggestions');
+  suggestionsEl.style.display = 'block';
+  suggestionsEl.innerHTML = '<div style="padding:12px 16px;font-size:13px;color:var(--text-muted)">Searching...</div>';
+
+  try {
+    const res = await fetch(`${API_BASE}/medicines/search?q=${encodeURIComponent(query)}&limit=6`);
+    const data = await res.json();
+
+    if (!data.results.length) {
+      suggestionsEl.innerHTML = '<div style="padding:14px 16px;font-size:14px;color:var(--text-muted)">No medicines found. Try a different name.</div>';
+      return;
+    }
+
+    suggestionsEl.innerHTML = data.results.map(m => `
+      <div class="search-suggestion" onclick="showMedicineDetail(${m.id})">
+        <div class="suggestion-icon">💊</div>
+        <div style="flex:1;min-width:0">
+          <div class="suggestion-text">${highlight(m.brand, query)}</div>
+          <div class="suggestion-generic">${m.generic}</div>
+        </div>
+        <span class="suggestion-savings">Save ${m.savingsPercent}%</span>
+      </div>
+    `).join('');
+
+    // Also show full results list
+    showSearchResults(data.results);
+  } catch(e) {
+    suggestionsEl.innerHTML = '<div style="padding:14px 16px;font-size:14px;color:var(--red-alert)">Error searching. Check connection.</div>';
+  }
+}
+
+function highlight(text, query) {
+  const re = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi');
+  return text.replace(re, '<mark style="background:var(--green-pale);color:var(--green-primary);border-radius:2px;padding:0 2px">$1</mark>');
+}
+
+function showSearchResults(results) {
+  document.getElementById('home-main').style.display = 'none';
+  const homeResults = document.getElementById('home-results');
+  homeResults.style.display = 'block';
+  document.getElementById('results-count-text').textContent = `${results.length} medicine${results.length !== 1 ? 's' : ''} found`;
+  document.getElementById('medicines-list').innerHTML = results.map(m => `
+    <div class="medicine-card" onclick="showMedicineDetail(${m.id})">
+      <div class="medicine-card-top">
+        <div class="medicine-brand">${m.brand}</div>
+        <span class="savings-badge">Save ${m.savingsPercent}%</span>
+      </div>
+      <div class="medicine-generic">${m.generic}</div>
+      <div class="medicine-salt">${m.salt}</div>
+      <div class="medicine-card-bottom">
+        <div class="price-group">
+          <span class="price-branded">₹${m.brandedPrice}</span>
+          <span class="price-generic">₹${m.genericPrice}</span>
+          <span class="price-label">/ strip</span>
+        </div>
+        <span class="category-tag">${m.category}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function hideSuggestions() {
+  const el = document.getElementById('home-suggestions');
+  el.style.display = 'none';
+  el.innerHTML = '';
+}
+
+function showHomeMain() {
+  document.getElementById('home-main').style.display = 'block';
+  document.getElementById('home-results').style.display = 'none';
+  hideSuggestions();
+}
+
+function clearSearch() {
+  document.getElementById('main-search-input').value = '';
+  document.getElementById('search-clear-btn').classList.remove('show');
+  showHomeMain();
+}
+
+function searchCategory(cat) {
+  navigateTo('home');
+  document.getElementById('main-search-input').value = cat;
+  handleSearch(cat);
+}
+
+// ─── MEDICINE DETAIL ──────────────────────────────────────────────────────────
+async function showMedicineDetail(id) {
+  hideSuggestions();
+  try {
+    const res = await fetch(`${API_BASE}/medicines/${id}`);
+    currentMedicine = await res.json();
+    renderMedicineModal(currentMedicine);
+    showModal('medicine-modal');
+  } catch(e) {
+    showToast('Error loading medicine details', 'error');
+  }
+}
+
+function renderMedicineModal(med) {
+  document.getElementById('medicine-modal-body').innerHTML = `
+    <div class="modal-medicine-name">${med.brand}</div>
+    <div class="modal-generic-name">Generic: ${med.generic}</div>
+    <div class="modal-salt">${med.salt}</div>
+    <div class="price-comparison">
+      <div class="price-col branded">
+        <div class="price-col-label">Branded</div>
+        <div class="price-col-value">₹${med.brandedPrice}</div>
+      </div>
+      <div class="price-divider"></div>
+      <div class="price-col" style="text-align:center">
+        <div style="font-size:22px;font-weight:800;color:var(--saffron)">${med.savingsPercent}%</div>
+        <div style="font-size:11px;color:var(--text-muted);font-weight:600">SAVINGS</div>
+      </div>
+      <div class="price-divider"></div>
+      <div class="price-col generic">
+        <div class="price-col-label">Generic</div>
+        <div class="price-col-value">₹${med.genericPrice}</div>
+      </div>
+    </div>
+    <div class="savings-highlight">💰 Save ₹${med.savings} per strip at Jan Aushadhi</div>
+    <div style="margin-top:16px">
+      <div class="detail-row"><span class="detail-icon">🏷️</span><span class="detail-label">Category</span><span class="detail-value">${med.category}</span></div>
+      <div class="detail-row"><span class="detail-icon">💊</span><span class="detail-label">Salt</span><span class="detail-value">${med.salt}</span></div>
+      <div class="detail-row"><span class="detail-icon">🩺</span><span class="detail-label">Used For</span><span class="detail-value">${med.uses}</span></div>
+      <div class="detail-row"><span class="detail-icon">🏥</span><span class="detail-label">Program</span><span class="detail-value">PM Jan Aushadhi (PMBJP)</span></div>
+    </div>
+    <div style="background:var(--saffron-light);border-radius:var(--radius-xs);padding:10px 12px;margin-top:12px;font-size:12px;color:#92400e;border:1px solid #FFD6B0">
+      ⚠️ Consult your doctor before switching. Generic = same formula, different brand.
+    </div>
+  `;
+}
+
+function findStoresForMedicine() {
+  closeModal('medicine-modal');
+  navigateTo('stores');
+  showToast(`Finding stores with ${currentMedicine.brand} generic...`, 'info');
+  if (!mapInstance) initMap();
+}
+
+// ─── STORES ───────────────────────────────────────────────────────────────────
+async function loadStores() {
+  try {
+    const res = await fetch(`${API_BASE}/stores`);
+    const data = await res.json();
+    allStores = data.stores;
+    renderStores(allStores);
+  } catch(e) {
+    document.getElementById('stores-list').innerHTML = '<div style="padding:20px;text-align:center;color:var(--red-alert)">Error loading stores</div>';
+  }
+}
+
+function renderStores(stores) {
+  const container = document.getElementById('stores-list');
+  if (stores === null) {
+    container.innerHTML = '<div class="empty-state" style="padding-top:20px"><span class="empty-icon" style="font-size:40px;margin-bottom:8px">🗺️</span><div class="empty-title">Find Jan Aushadhi Stores</div><div class="empty-subtitle">Tap the map above to use your GPS location and find real stores within 25km.</div></div>';
+    return;
+  }
+  if (!stores.length) {
+    container.innerHTML = '<div class="empty-state" style="padding-top:20px"><span class="empty-icon" style="font-size:40px;margin-bottom:8px">📍</span><div class="empty-title">No Stores Found</div><div class="empty-subtitle">We could not find any stores. <b>Please tap the map above</b> to search via GPS.</div></div>';
+    return;
+  }
+  container.innerHTML = stores.map(s => `
+    <div class="store-card">
+      <div class="store-card-top">
+        <div class="store-name">${s.name}</div>
+        <span class="store-status ${s.isOpen ? 'open' : 'closed'}">${s.isOpen ? '● Open' : '● Closed'}</span>
+      </div>
+      <div class="store-address">📍 ${s.address}</div>
+      <div class="store-meta">
+        ${s.distance !== undefined ? `<span class="store-distance">🗺️ ${s.distance} km</span>` : ''}
+        <span class="store-meta-item"><span class="store-rating">⭐</span> ${s.rating}</span>
+        <span class="store-meta-item">💊 ${s.totalMedicines}+ medicines</span>
+        <span class="store-meta-item">🕐 ${s.timings}</span>
+      </div>
+      <div class="store-actions">
+        <button class="store-action-btn call" onclick="callStore('${s.phone}')">📞 Call</button>
+        <button class="store-action-btn dir" onclick="openDirections(${s.lat},${s.lng},'${escapeStr(s.name)}')">🗺️ Directions</button>
+        <button class="store-action-btn" onclick="checkStock(${s.id},'${escapeStr(s.name)}')">📦 Check Stock</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function filterStores(mode, el) {
+  document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  storeFilterMode = mode;
+  let filtered = [...allStores];
+  if (mode === 'open') filtered = filtered.filter(s => s.isOpen);
+  else if (mode === 'nearby') filtered = filtered.filter(s => s.distance !== undefined ? s.distance <= 5 : true).slice(0, 5);
+  else if (mode === 'top') filtered = [...filtered].sort((a, b) => b.rating - a.rating);
+  renderStores(filtered);
+}
+
+function filterStoresByText(text) {
+  const query = text.toLowerCase().trim();
+  if (!query) {
+    const activeChip = document.querySelector('.filter-chip.active');
+    if(activeChip) filterStores(storeFilterMode, activeChip);
+    return;
+  }
+  const filtered = allStores.filter(s => 
+    s.name.toLowerCase().includes(query) || 
+    s.address.toLowerCase().includes(query)
+  );
+  renderStores(filtered);
+}
+
+function callStore(phone) { window.location.href = `tel:${phone}`; }
+function openDirections(lat, lng, name) { window.open(`https://maps.google.com/maps?daddr=${lat},${lng}&q=${encodeURIComponent(name)}`, '_blank'); }
+
+async function checkStock(storeId, storeName) {
+  if (!currentMedicine) {
+    showToast('Search for a medicine first, then check stock', 'warning');
+    return;
+  }
+  try {
+    showToast(`Checking stock at ${storeName}...`, 'info');
+    const res = await fetch(`${API_BASE}/stores/${storeId}/stock-request`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ medicineId: currentMedicine.id, medicineName: currentMedicine.brand })
+    });
+    const data = await res.json();
+    showToast(data.message, data.inStock ? 'success' : 'warning');
+  } catch(e) {
+    showToast('Could not check stock', 'error');
+  }
+}
+
+async function initMap() {
+  if (!navigator.geolocation) return showToast('Geolocation not supported', 'error');
+  showToast('Getting your location...', 'info');
+  
+  const handleLocationError = (err) => {
+    showToast('Could not get GPS location. Using default location (New Delhi).', 'warning');
+    renderMap({ coords: { latitude: 28.6139, longitude: 77.2090 } });
+  };
+
+  const renderMap = (pos) => {
+    userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+    document.getElementById('map-placeholder').style.display = 'none';
+    const mapEl = document.getElementById('store-map');
+    mapEl.style.display = 'block';
+    
+    if (!mapInstance) {
+      mapInstance = L.map('store-map').setView([userLocation.lat, userLocation.lng], 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { 
+        attribution: '© OpenStreetMap' 
+      }).addTo(mapInstance);
+    } else {
+      mapInstance.setView([userLocation.lat, userLocation.lng], 13);
+    }
+    
+    L.marker([userLocation.lat, userLocation.lng], {
+      icon: L.divIcon({ html: '<div style="background:#006B3C;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:14px;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3)">📍</div>', className: '', iconSize: [28, 28], iconAnchor: [14, 14] })
+    }).addTo(mapInstance).bindPopup('📍 You are here');
+    
+    fetchNearbyStores(userLocation.lat, userLocation.lng);
+  };
+
+  navigator.geolocation.getCurrentPosition(renderMap, handleLocationError, { timeout: 8000, maximumAge: 0 });
+}
+
+async function fetchNearbyStores(lat, lng) {
+  try {
+    const res = await fetch(`${API_BASE}/stores/nearby?lat=${lat}&lng=${lng}&radius=25`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Failed to fetch stores');
+    
+    allStores = data.stores || [];
+    renderStores(allStores);
+    
+    // Clear old markers (Leaflet handles this differently, usually by tracking a LayerGroup)
+    // For simplicity in this demo, we'll just add new ones
+    allStores.forEach(s => {
+      const marker = L.marker([s.lat, s.lng], {
+        icon: L.divIcon({ 
+          html: `<div style="background:#006B3C;color:#fff;border-radius:8px;padding:3px 6px;font-size:11px;font-weight:700;white-space:nowrap;border:2px solid white;box-shadow:0 2px 8px rgba(0,0,0,0.3)">${s.distance}km</div>`, 
+          className: '', 
+          iconSize: [60, 24], 
+          iconAnchor: [30, 12] 
+        })
+      }).addTo(mapInstance);
+      marker.bindPopup(`<b>${s.name}</b><br>${s.address}<br>📞 ${s.phone}`);
+    });
+    showToast(`Found ${allStores.length} stores nearby`, 'success');
+  } catch(e) {
+    allStores = [];
+    renderStores(allStores);
+    showToast(e.message, 'error');
+  }
+}
+
+// ─── REMINDERS ────────────────────────────────────────────────────────────────
+async function loadReminders() {
+  try {
+    const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : {};
+    const res = await fetch(`${API_BASE}/reminders`, { headers });
+    const data = await res.json();
+    remindersList = data.reminders;
+    renderReminders();
+  } catch(e) {
+    renderReminders();
+  }
+}
+
+function renderReminders() {
+  const container = document.getElementById('reminders-container');
+  if (!remindersList.length) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <span class="empty-icon">⏰</span>
+        <div class="empty-title">No Reminders Yet</div>
+        <div class="empty-subtitle">Add medicine reminders to track your refill dates and never miss a dose.</div>
+      </div>
+    `;
+    return;
+  }
+  const today = new Date();
+  container.innerHTML = remindersList.map(r => {
+    const refill = new Date(r.nextRefillDate);
+    const daysLeft = Math.ceil((refill - today) / (1000 * 60 * 60 * 24));
+    let badgeClass = 'ok', badgeText = `Refill in ${daysLeft} days`;
+    if (daysLeft <= 0) { badgeClass = 'overdue'; badgeText = `⚠️ Overdue by ${Math.abs(daysLeft)} days`; }
+    else if (daysLeft <= 5) { badgeClass = 'soon'; badgeText = `⚡ Refill soon (${daysLeft} days)`; }
+    return `
+      <div class="reminder-card">
+        <div class="reminder-card-header">
+          <div class="reminder-med-name">💊 ${r.medicineName}</div>
+          <button class="reminder-delete" onclick="deleteReminder(${r.id})">Delete</button>
+        </div>
+        <div class="reminder-generic">${r.genericName || 'Generic equivalent'}</div>
+        <div class="reminder-meta">
+          <span class="reminder-meta-item">💊 ${r.dosage}</span>
+          <span class="reminder-meta-item">🔁 ${r.frequency}</span>
+          ${r.notes ? `<span class="reminder-meta-item">📝 ${r.notes}</span>` : ''}
+        </div>
+        <span class="refill-badge ${badgeClass}">${badgeText}</span>
+      </div>
+    `;
+  }).join('');
+}
+
+function showAddReminderModal() {
+  const d = new Date();
+  d.setDate(d.getDate() + 30);
+  document.getElementById('form-refill-date').value = d.toISOString().split('T')[0];
+  if (currentMedicine) {
+    document.getElementById('form-brand').value = currentMedicine.brand;
+    document.getElementById('form-generic').value = currentMedicine.salt;
+  }
+  showModal('reminder-modal');
+}
+
+function addReminderFromModal() {
+  closeModal('medicine-modal');
+  showAddReminderModal();
+}
+
+async function saveReminder() {
+  const brand = document.getElementById('form-brand').value.trim();
+  const dosage = document.getElementById('form-dosage').value.trim();
+  const refillDate = document.getElementById('form-refill-date').value;
+  if (!brand || !dosage || !refillDate) { showToast('Please fill all required fields', 'warning'); return; }
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+    const res = await fetch(`${API_BASE}/reminders`, {
+      method: 'POST', headers,
+      body: JSON.stringify({
+        medicineName: brand,
+        genericName: document.getElementById('form-generic').value,
+        dosage,
+        frequency: document.getElementById('form-frequency').value,
+        nextRefillDate: refillDate,
+        notes: document.getElementById('form-notes').value
+      })
+    });
+    const reminder = await res.json();
+    remindersList.push(reminder);
+    closeModal('reminder-modal');
+    renderReminders();
+    showToast('✅ Reminder saved!', 'success');
+    ['form-brand','form-generic','form-dosage','form-notes'].forEach(id => document.getElementById(id).value = '');
+    scheduleNotification(brand, refillDate);
+  } catch(e) {
+    showToast('Error saving reminder', 'error');
+  }
+}
+
+async function deleteReminder(id) {
+  try {
+    const headers = authToken ? { 'Authorization': `Bearer ${authToken}` } : {};
+    await fetch(`${API_BASE}/reminders/${id}`, { method: 'DELETE', headers });
+    remindersList = remindersList.filter(r => r.id !== id);
+    renderReminders();
+    showToast('Reminder deleted', 'success');
+  } catch(e) {}
+}
+
+// ─── PUSH NOTIFICATIONS ───────────────────────────────────────────────────────
+async function scheduleNotification(medicineName, refillDate) {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'default') await Notification.requestPermission();
+  if (Notification.permission !== 'granted') return;
+  const msUntilRefill = new Date(refillDate) - new Date();
+  if (msUntilRefill > 0 && msUntilRefill <= 5 * 24 * 60 * 60 * 1000) {
+    setTimeout(() => {
+      new Notification('💊 Jan Aushadhi Reminder', {
+        body: `Time to refill: ${medicineName}. Visit your nearest Jan Aushadhi store!`,
+        icon: '/icons/icon-192.png',
+        badge: '/icons/icon-72.png',
+        tag: `refill-${medicineName}`
+      });
+    }, Math.max(0, msUntilRefill - 24 * 60 * 60 * 1000));
+  }
+}
+
+// ─── SAVINGS CALCULATOR ───────────────────────────────────────────────────────
+let calcDebounce = null;
+async function showCalcSuggestions(q) {
+  clearTimeout(calcDebounce);
+  const el = document.getElementById('calc-suggestions');
+  if (!q.trim() || q.trim().length < 2) { el.style.display = 'none'; return; }
+  calcDebounce = setTimeout(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/medicines/search?q=${encodeURIComponent(q)}&limit=5`);
+      const data = await res.json();
+      if (!data.results.length) { el.style.display = 'none'; return; }
+      el.style.display = 'block';
+      el.innerHTML = data.results.map(m => `
+        <div class="search-suggestion" onclick="addToCalc(${m.id},'${escapeStr(m.brand)}','${escapeStr(m.generic)}',${m.brandedPrice},${m.genericPrice})">
+          <div class="suggestion-icon">➕</div>
+          <div>
+            <div class="suggestion-text">${m.brand}</div>
+            <div class="suggestion-generic">${m.generic} — Save ${m.savingsPercent}%</div>
+          </div>
+        </div>
+      `).join('');
+    } catch(e) {}
+  }, 280);
+}
+
+function addToCalc(id, brand, generic, brandedPrice, genericPrice) {
+  document.getElementById('calc-suggestions').style.display = 'none';
+  document.getElementById('calc-search-input').value = '';
+  if (prescriptionItems.find(i => i.id === id)) { showToast(`${brand} already added`, 'warning'); return; }
+  prescriptionItems.push({ id, brand, generic, brandedPrice, genericPrice, quantity: 1 });
+  renderPrescription();
+  showToast(`✅ ${brand} added`, 'success');
+}
+
+function addToCalculator() {
+  if (!currentMedicine) return;
+  closeModal('medicine-modal');
+  navigateTo('savings');
+  addToCalc(currentMedicine.id, currentMedicine.brand, currentMedicine.generic, currentMedicine.brandedPrice, currentMedicine.genericPrice);
+}
+
+function changeQty(id, delta) {
+  const item = prescriptionItems.find(i => i.id === id);
+  if (!item) return;
+  item.quantity = Math.max(1, item.quantity + delta);
+  renderPrescription();
+}
+
+function removeFromCalc(id) {
+  prescriptionItems = prescriptionItems.filter(i => i.id !== id);
+  renderPrescription();
+}
+
+function renderPrescription() {
+  const container = document.getElementById('prescription-items');
+  const empty = document.getElementById('savings-empty');
+  if (!prescriptionItems.length) {
+    container.innerHTML = '';
+    document.getElementById('savings-result-card').style.display = 'none';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  container.innerHTML = prescriptionItems.map(item => `
+    <div class="prescription-item">
+      <div class="prescription-item-info">
+        <div class="prescription-item-name">${item.brand}</div>
+        <div class="prescription-item-generic">${item.generic}</div>
+      </div>
+      <div class="qty-control">
+        <button class="qty-btn" onclick="changeQty(${item.id},-1)">−</button>
+        <span class="qty-value">${item.quantity}</span>
+        <button class="qty-btn" onclick="changeQty(${item.id},1)">+</button>
+      </div>
+      <button class="remove-item-btn" onclick="removeFromCalc(${item.id})">🗑️</button>
+    </div>
+  `).join('');
+  calculateSavings();
+}
+
+async function calculateSavings() {
+  if (!prescriptionItems.length) return;
+  try {
+    const res = await fetch(`${API_BASE}/calculate-savings`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prescription: prescriptionItems.map(i => ({ medicineId: i.id, quantity: i.quantity })) })
+    });
+    const data = await res.json();
+    const card = document.getElementById('savings-result-card');
+    card.style.display = 'block';
+    document.getElementById('result-saved').textContent = `₹${data.totalSaved}`;
+    document.getElementById('result-percent').textContent = `${data.savingsPercent}% savings vs branded medicines`;
+    document.getElementById('result-branded').textContent = `₹${data.totalBranded}`;
+    document.getElementById('result-generic').textContent = `₹${data.totalGeneric}`;
+  } catch(e) {}
+}
+
+// ─── AUTH ─────────────────────────────────────────────────────────────────────
+function renderProfile() {
+  const section = document.getElementById('profile-auth-section');
+  if (!currentUser) {
+    section.innerHTML = `
+      <div style="background:linear-gradient(160deg,var(--green-primary),var(--green-dark));padding:40px 20px;text-align:center">
+        <div style="font-size:56px;margin-bottom:12px">👤</div>
+        <div style="font-size:20px;font-weight:800;color:#fff;margin-bottom:6px">Sign In to Jan Aushadhi</div>
+        <div style="font-size:13px;color:rgba(255,255,255,0.75)">Sync reminders & track your savings</div>
+        <button class="btn-primary" onclick="showModal('auth-modal')" style="margin-top:20px;background:rgba(255,255,255,0.2);border:1.5px solid rgba(255,255,255,0.3)">Sign In / Register</button>
+      </div>
+      <div style="padding:16px">
+        <div class="info-banner">
+          <div class="info-banner-icon">✨</div>
+          <div>
+            <div class="info-banner-title">Benefits of signing in</div>
+            <div class="info-banner-text">• Reminders synced across devices<br>• Track your total savings history<br>• Faster access to your prescriptions</div>
+          </div>
+        </div>
+      </div>
+    `;
+    return;
+  }
+  section.innerHTML = `
+    <div class="profile-header">
+      <div class="profile-avatar">👤</div>
+      <div class="profile-name">${currentUser.name || 'Jan Aushadhi User'}</div>
+      <div class="profile-email">${currentUser.email || currentUser.phone || ''}</div>
+    </div>
+    <div class="profile-stats">
+      <div class="profile-stat"><div class="profile-stat-value">${remindersList.length}</div><div class="profile-stat-label">Reminders</div></div>
+      <div class="profile-stat"><div class="profile-stat-value">${prescriptionItems.length}</div><div class="profile-stat-label">In Cart</div></div>
+      <div class="profile-stat"><div class="profile-stat-value">90%</div><div class="profile-stat-label">Max Saved</div></div>
+    </div>
+    <div class="profile-section">
+      <div class="profile-section-title">Account</div>
+      <div class="profile-menu">
+        <div class="profile-menu-item" onclick="navigateTo('reminders')"><span class="profile-menu-icon">⏰</span><span class="profile-menu-text">My Reminders</span><span class="profile-menu-arrow">›</span></div>
+        <div class="profile-menu-item" onclick="navigateTo('savings')"><span class="profile-menu-icon">💰</span><span class="profile-menu-text">Savings Calculator</span><span class="profile-menu-arrow">›</span></div>
+        <div class="profile-menu-item" onclick="navigateTo('stores')"><span class="profile-menu-icon">📍</span><span class="profile-menu-text">Find Stores</span><span class="profile-menu-arrow">›</span></div>
+      </div>
+    </div>
+    <div class="profile-section">
+      <div class="profile-section-title">Info</div>
+      <div class="profile-menu">
+        <div class="profile-menu-item" onclick="showInfoModal()"><span class="profile-menu-icon">ℹ️</span><span class="profile-menu-text">About Jan Aushadhi</span><span class="profile-menu-arrow">›</span></div>
+        <div class="profile-menu-item" onclick="requestNotificationPermission()"><span class="profile-menu-icon">🔔</span><span class="profile-menu-text">Enable Notifications</span><span class="profile-menu-arrow">›</span></div>
+        <div class="profile-menu-item danger" onclick="logout()"><span class="profile-menu-icon">🚪</span><span class="profile-menu-text">Sign Out</span></div>
+      </div>
+    </div>
+  `;
+}
+
+function switchAuthTab(tab) {
+  authMode = tab;
+  document.getElementById('auth-email-form').style.display = tab === 'email' ? '' : 'none';
+  document.getElementById('auth-phone-form').style.display = tab === 'phone' ? '' : 'none';
+  document.getElementById('tab-email').classList.toggle('active', tab === 'email');
+  document.getElementById('tab-phone').classList.toggle('active', tab === 'phone');
+}
+
+function switchLoginMode(mode) {
+  loginMode = mode;
+  document.getElementById('name-group').style.display = mode === 'register' ? '' : 'none';
+  document.getElementById('tab-login').classList.toggle('active', mode === 'login');
+  document.getElementById('tab-register').classList.toggle('active', mode === 'register');
+  document.getElementById('email-auth-btn').textContent = mode === 'login' ? 'Sign In' : 'Create Account';
+}
+
+async function handleEmailAuth() {
+  const email = document.getElementById('auth-email').value.trim();
+  const password = document.getElementById('auth-password').value;
+  if (!email || !password) { showToast('Enter email and password', 'warning'); return; }
+  const btn = document.getElementById('email-auth-btn');
+  btn.textContent = '...'; btn.disabled = true;
+  try {
+    const endpoint = loginMode === 'login' ? '/auth/login' : '/auth/register';
+    const body = loginMode === 'register'
+      ? { name: document.getElementById('auth-name').value.trim(), email, password }
+      : { email, password };
+    const res = await fetch(`${API_BASE}${endpoint}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Auth failed');
+    authToken = data.token;
+    currentUser = data.user;
+    localStorage.setItem('authToken', authToken);
+    localStorage.setItem('userData', JSON.stringify(currentUser));
+    closeModal('auth-modal');
+    renderProfile();
+    showToast(`Welcome, ${currentUser.name || currentUser.email}! 🎉`, 'success');
+  } catch(e) {
+    showToast(e.message || 'Authentication failed', 'error');
+  } finally {
+    btn.textContent = loginMode === 'login' ? 'Sign In' : 'Create Account';
+    btn.disabled = false;
+  }
+}
+
+async function sendOTP() {
+  const phone = document.getElementById('auth-phone').value.trim();
+  if (!/^[6-9]\d{9}$/.test(phone)) { showToast('Enter a valid 10-digit mobile number', 'warning'); return; }
+  try {
+    const res = await fetch(`${API_BASE}/auth/otp/send`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    document.getElementById('otp-step-1').style.display = 'none';
+    document.getElementById('otp-step-2').style.display = '';
+    document.getElementById('otp-phone-display').textContent = `+91 ${phone}`;
+    showToast('OTP sent!', 'success');
+    if (data.otp) showToast(`Dev OTP: ${data.otp}`, 'info');
+    document.querySelectorAll('.otp-digit')[0].focus();
+  } catch(e) {
+    showToast(e.message || 'Failed to send OTP', 'error');
+  }
+}
+
+function otpInput(el, idx) {
+  el.value = el.value.replace(/\D/,'');
+  if (el.value && idx < 5) {
+    document.querySelectorAll('.otp-digit')[idx + 1].focus();
+  }
+}
+
+async function verifyOTP() {
+  const phone = document.getElementById('auth-phone').value.trim();
+  const otp = [...document.querySelectorAll('.otp-digit')].map(d => d.value).join('');
+  if (otp.length !== 6) { showToast('Enter 6-digit OTP', 'warning'); return; }
+  try {
+    const res = await fetch(`${API_BASE}/auth/otp/verify`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone, otp })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    authToken = data.token;
+    currentUser = data.user;
+    localStorage.setItem('authToken', authToken);
+    localStorage.setItem('userData', JSON.stringify(currentUser));
+    closeModal('auth-modal');
+    renderProfile();
+    showToast('Signed in successfully! 🎉', 'success');
+  } catch(e) {
+    showToast(e.message || 'Invalid OTP', 'error');
+  }
+}
+
+function logout() {
+  authToken = null; currentUser = null;
+  localStorage.removeItem('authToken');
+  localStorage.removeItem('userData');
+  remindersList = [];
+  renderProfile();
+  showToast('Signed out', 'success');
+}
+
+async function requestNotificationPermission() {
+  if (!('Notification' in window)) { showToast('Notifications not supported', 'warning'); return; }
+  const perm = await Notification.requestPermission();
+  showToast(perm === 'granted' ? '🔔 Notifications enabled!' : 'Notifications blocked', perm === 'granted' ? 'success' : 'warning');
+}
+
+// ─── MODALS ───────────────────────────────────────────────────────────────────
+function showModal(id) {
+  document.getElementById(id).classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+  document.body.style.overflow = '';
+}
+function handleModalClick(e, id) {
+  if (e.target === document.getElementById(id)) closeModal(id);
+}
+function showInfoModal() { showModal('info-modal'); }
+
+// ─── TOAST ────────────────────────────────────────────────────────────────────
+function showToast(message, type = 'success') {
+  const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+  const container = document.getElementById('toast-container');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `<span>${icons[type]||'ℹ️'}</span> ${message}`;
+  container.appendChild(toast);
+  setTimeout(() => toast.classList.add('show'), 10);
+  setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 300); }, 3000);
+}
+
+// ─── UTILS ────────────────────────────────────────────────────────────────────
+function escapeStr(s) { return String(s).replace(/'/g, "\\'").replace(/"/g, '\\"'); }
+
+// ─── TOP SAVERS ───────────────────────────────────────────────────────────────
+async function loadTopSavers() {
+  try {
+    const res = await fetch(`${API_BASE}/medicines?limit=5&sort=savings`);
+    const data = await res.json();
+    const container = document.getElementById('top-savers-list');
+    container.innerHTML = data.results.slice(0, 5).map(m => `
+      <div class="saver-card" onclick="showMedicineDetail(${m.id})">
+        <span class="saver-badge">Save ${m.savingsPercent}%</span>
+        <div class="saver-info">
+          <div class="saver-brand">${m.brand}</div>
+          <div class="saver-generic">${m.generic}</div>
+        </div>
+        <div class="saver-price">
+          <div class="saver-price-branded">₹${m.brandedPrice}</div>
+          <div class="saver-price-generic">₹${m.genericPrice}</div>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {}
+}
+
+// ─── STATS ────────────────────────────────────────────────────────────────────
+async function loadStats() {
+  try {
+    const res = await fetch(`${API_BASE}/health`);
+    const data = await res.json();
+    document.getElementById('stat-medicines').textContent = data.medicines + '+';
+    document.getElementById('stat-stores').textContent = data.stores;
+  } catch(e) {}
+}
+
+// ─── SERVICE WORKER ───────────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('[SW] Registered'))
+      .catch(err => console.log('[SW] Registration failed', err));
+  });
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  loadStats();
+  loadTopSavers();
+
+  // Android back button support
+  window.addEventListener('popstate', e => {
+    if (currentPage !== 'home') {
+      e.preventDefault();
+      if (document.querySelector('.modal-overlay.show')) {
+        document.querySelectorAll('.modal-overlay.show').forEach(m => m.classList.remove('show'));
+        document.body.style.overflow = '';
+      } else {
+        navigateTo('home');
+      }
+      history.pushState(null, '', '');
+    }
+  });
+  history.pushState(null, '', '');
+
+  window.addEventListener('offline', () => {
+    showToast('You are offline. Showing cached data.', 'warning');
+  });
+  window.addEventListener('online', () => {
+    showToast('Back online!', 'success');
+    if (currentPage === 'stores') loadStores();
+    if (currentPage === 'reminders') loadReminders();
+  });
+
+  // Install prompt for PWA
+  let deferredPrompt;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    setTimeout(() => {
+      if (deferredPrompt) {
+        showToast('📱 Add to Home Screen for the best experience!', 'info');
+      }
+    }, 5000);
+  });
+});
+</script>
+</body>
+</html>

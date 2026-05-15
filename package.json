@@ -1,0 +1,41 @@
+{
+  "name": "jan-aushadhi-finder",
+  "version": "2.0.0",
+  "description": "Jan Aushadhi Finder — Generic Medicine Locator for India. PWA + TWA deployable.",
+  "main": "backend/server.js",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  },
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "nodemon backend/server.js",
+    "test": "echo 'No tests configured yet' && exit 0",
+    "lint": "eslint backend/ --ext .js"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.105.4",
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^12.9.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.1.5",
+    "express-validator": "^7.0.1",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": [
+    "jan-aushadhi",
+    "generic-medicine",
+    "india",
+    "healthcare",
+    "pwa"
+  ],
+  "author": "Jan Aushadhi Finder Team",
+  "license": "MIT"
+}
