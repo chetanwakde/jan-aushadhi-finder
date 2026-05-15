@@ -1,0 +1,9 @@
+# Ignore frontend and backend files for GitHub language statistics
+# This ensures Kotlin appears as the primary language of the repository.
+frontend/** linguist-vendored
+backend/** linguist-vendored
+api/** linguist-vendored
+data/** linguist-vendored
+*.js linguist-vendored
+*.html linguist-vendored
+*.css linguist-vendored
